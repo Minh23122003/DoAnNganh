@@ -1,0 +1,55 @@
+{% extends 'admin/base_site.html' %}
+
+{% block dark-mode-vars %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <h1 class="col-md-3">Chon loai thong ke</h1>
+</div>
+<h1>Chon loai thong ke</h1>
+
+
+
+<div style="width: 50%">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let labels = [];
+    let data = [];
+    {% for c in bills %}
+        labels.push('{{ c.id }}')
+        data.push({{ c.total_price }})
+    {% endfor %}
+
+    window.onload = function() {
+         const ctx = document.getElementById('myChart');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Số lượng',
+        data: data,
+        borderWidth: 1,
+        backgroundColor: ['red', 'green', 'blue']
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+    }
+
+</script>
+{% endblock %}
