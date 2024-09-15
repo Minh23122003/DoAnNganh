@@ -6,10 +6,10 @@ from rest_framework import routers
 r = routers.DefaultRouter()
 
 r.register('tours', views.TourViewSet, basename='tours')
-r.register('tours-category', views.TourCategoryViewSet, basename='tours-category')
+r.register('category', views.TourCategoryViewSet, basename='category')
 r.register('user', views.UserViewSet, basename='user')
 r.register('booking', views.BookingViewSet, basename='booking')
-r.register('comment-tour', views.CommentViewSet, basename='comment-tour')
+r.register('comment', views.CommentViewSet, basename='comment')
 
 
 

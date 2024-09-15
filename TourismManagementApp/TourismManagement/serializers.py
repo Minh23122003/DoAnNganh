@@ -121,7 +121,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'avatar', 'email', 'is_superuser', 'is_staff']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'avatar', 'email', 'is_superuser', 'is_staff', 'phone']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -136,38 +136,24 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    total = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
     tour_name = serializers.SerializerMethodField()
-    type = serializers.SerializerMethodField()
+    tour_start_date = serializers.SerializerMethodField()
+
+    def get_price(self, booking):
+        prices = Price.objects.get(id=booking.price_id)
+
+        return PriceSerializer(prices).data
 
     def get_tour_name(self, booking):
         price = Price.objects.get(id=booking.price_id)
         tour = Tour.objects.get(id=price.tour_id)
         return tour.name
 
-    def get_total(self, booking):
+    def get_tour_start_date(self, booking):
         price = Price.objects.get(id=booking.price_id)
-        return int(price.price) * int(booking.quantity)
-
-    def get_type(self, booking):
-        price = Price.objects.get(id=booking.price_id)
-        type = TypeOfTicket.objects.get(id=price.type_id)
-
-        return type.name
+        tour = Tour.objects.get(id=price.tour_id)
+        return tour.start_date
     class Meta:
         model = Booking
-        fields = ['id', 'quantity'] + ['total'] + ['tour_name'] + ['type']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        fields = ['id', 'quantity', 'pay'] + ['price'] + ['created_date'] + ['tour_name'] + ['tour_start_date']

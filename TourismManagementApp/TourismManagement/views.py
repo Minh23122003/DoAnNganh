@@ -38,7 +38,7 @@ class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIVi
             start_date = self.request.query_params.get('start_date')
             try:
                 if start_date:
-                    queries = queries.filter(start_date=datetime.strptime(start_date, '%m-%d-%Y')).order_by('-id')
+                    queries = queries.filter(start_date=datetime.strptime(start_date, '%Y-%m-%d')).order_by('-id')
             except:
                 queries = queries
             location = self.request.query_params.get('location')
@@ -93,7 +93,7 @@ class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIVi
     @action(methods=['post'], url_path='post-booking', detail=True)
     def post_booking(self, request, pk):
 
-        booking, created = Booking.objects.get_or_create(user=request.user, price_id=request.data.get('price_id'), defaults={'quantity': request.data.get('quantity')})
+        booking, created = Booking.objects.get_or_create(user=request.user, price_id=request.data.get('price_id'), pay=False, defaults={'quantity': request.data.get('quantity')})
 
         if not created:
             return JsonResponse({'content': 'Ban da dat ve cho tour nay roi. Vui long huy ve de dat lai!', 'status': 406})
@@ -105,7 +105,7 @@ class TourCategoryViewSet(viewsets.ViewSet, generics.ListAPIView, generics.Retri
     serializer_class = serializers.TourCategorySerializer
 
 
-class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView):
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView, generics.UpdateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
     parser_classes = [parsers.MultiPartParser, ]
@@ -120,29 +120,50 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
         user = request.user
         if request.method.__eq__('PUT'):
             for k, v in request.data.items():
+                if k == 'avatar' and v == 'undefined':
+                    setattr(user, k, User.objects.get(username=user).avatar)
+                    continue
                 setattr(user, k, v)
             user.save()
+        User.objects.filter(username=user).update(last_login=datetime.now())
 
-        return Response(serializers.UserInfoSerializer(user).data)
+        return Response(serializers.UserSerializer(user).data)
 
     @action(methods=['get'], url_path='get-booking', detail=False)
     def get_booking(self, request):
-        booking = Booking.objects.filter(user=request.user).all()
+        booking = Booking.objects.filter(user=request.user).order_by("-id")
 
-        return JsonResponse({'results': serializers.BookingSerializer(booking, many=True).data})
+        return Response(serializers.BookingSerializer(booking, many=True).data)
 
 
 class BookingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
     queryset = Booking.objects.all()
 
-    @action(methods=['post'], url_path='pay', detail=False)
-    def pay(self, request):
-        booking = Booking.objects.filter(user_id=request.data.get('user_id'))
+    @action(methods=['post'], url_path='pay-all', detail=False)
+    def pay_all(self, request):
+        booking = Booking.objects.filter(user_id=request.data.get('user_id'), pay=False)
         for b in booking:
+            b.pay = True
             b.save()
-        bill = Bill.objects.create(user_id=request.data.get('user_id'), total=request.data.get('total'))
+            price = Price.objects.get(id=b.price_id)
+            bill = Bill.objects.create(booking_id=b.id, total=b.quantity * price.price, method_pay=request.data.get("method_pay"))
 
         return Response(status=status.HTTP_200_OK)
+
+    @action(methods=['post'], url_path='pay', detail=False)
+    def pay(self, request):
+        booking = Booking.objects.get(id=request.data.get("id"))
+        booking.pay = True
+        booking.save()
+        bill = Bill.objects.create(booking_id=booking.id, total=request.data.get('total'), method_pay=request.data.get("method_pay"))
+
+        return Response(status=status.HTTP_200_OK)
+
+    @action(methods=['post'], url_path='add-rating', detail=True)
+    def addRating(self, request, pk):
+        rating = Rating.objects.create(booking=self.get_object(), stars=request.data.get('stars'), content=request.data.get('content'))
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView):
