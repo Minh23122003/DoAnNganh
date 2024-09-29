@@ -5,6 +5,12 @@ from rest_framework.response import Response
 from .models import *
 from datetime import datetime
 from django.http import JsonResponse
+from django.db.models import Sum, Count
+import json
+import uuid
+import requests
+import hmac
+import hashlib
 
 
 class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIView):
@@ -96,7 +102,7 @@ class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIVi
         booking, created = Booking.objects.get_or_create(user=request.user, price_id=request.data.get('price_id'), pay=False, defaults={'quantity': request.data.get('quantity')})
 
         if not created:
-            return JsonResponse({'content': 'Ban da dat ve cho tour nay roi. Vui long huy ve de dat lai!', 'status': 406})
+            return JsonResponse({'content': 'Bạn đã đặt vé cho tour này rồi. Vui lòng hủy vé để đặt lại!', 'status': 406})
         return Response(serializers.BookingSerializer(booking).data, status=status.HTTP_200_OK)
 
 
@@ -155,7 +161,7 @@ class BookingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
         booking = Booking.objects.get(id=request.data.get("id"))
         booking.pay = True
         booking.save()
-        bill = Bill.objects.create(booking_id=booking.id, total=request.data.get('total'), method_pay=request.data.get("method_pay"))
+        bill = Bill.objects.get_or_create(booking_id=booking.id, defaults={'total':request.data.get('total'), 'method_pay':request.data.get("method_pay")})
 
         return Response(status=status.HTTP_200_OK)
 
@@ -165,6 +171,99 @@ class BookingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
 
         return Response(status=status.HTTP_201_CREATED)
 
+    @action(methods=['post'], url_path='get-link-momo', detail=False)
+    def test(self, request):
+        # parameters send to MoMo get get payUrl
+        endpoint = "https://test-payment.momo.vn/v2/gateway/api/create"
+        accessKey = "F8BBA842ECF85"
+        secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+        orderInfo = "pay with MoMo"
+        partnerCode = "MOMO"
+        redirectUrl = "http://localhost:3000/cart"
+        ipnUrl = "http://localhost:3000/cart"
+        amount = str(request.data.get('amount'))
+        orderId = str(uuid.uuid4())
+        requestId = str(uuid.uuid4())
+        extraData = ""  # pass empty value or Encode base64 JsonString
+        partnerName = "MoMo Payment"
+        requestType = "payWithMethod"
+        storeId = "Test Store"
+        orderGroupId = ""
+        autoCapture = True
+        lang = "vi"
+        orderGroupId = ""
+
+        # before sign HMAC SHA256 with format: accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl
+        # &orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId
+        # &requestType=$requestType
+        rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId \
+                       + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl \
+                       + "&requestId=" + requestId + "&requestType=" + requestType
+
+        # puts raw signature
+        print("--------------------RAW SIGNATURE----------------")
+        print(rawSignature)
+        # signature
+        h = hmac.new(bytes(secretKey, 'ascii'), bytes(rawSignature, 'ascii'), hashlib.sha256)
+        signature = h.hexdigest()
+        print("--------------------SIGNATURE----------------")
+        print(signature)
+
+        # json object send to MoMo endpoint
+
+        data = {
+            'partnerCode': partnerCode,
+            'orderId': orderId,
+            'partnerName': partnerName,
+            'storeId': storeId,
+            'ipnUrl': ipnUrl,
+            'amount': amount,
+            'lang': lang,
+            'requestType': requestType,
+            'redirectUrl': redirectUrl,
+            'autoCapture': autoCapture,
+            'orderInfo': orderInfo,
+            'requestId': requestId,
+            'extraData': extraData,
+            'signature': signature,
+            'orderGroupId': orderGroupId
+        }
+
+        print("--------------------JSON REQUEST----------------\n")
+        data = json.dumps(data)
+        print(data)
+
+        clen = len(data)
+        response = requests.post(endpoint, data=data,
+                                 headers={'Content-Type': 'application/json', 'Content-Length': str(clen)})
+        return Response(response.json())
+
+    @action(methods=['post'], url_path='check-status', detail=False)
+    def check_status(self, request):
+        endpoint = "https://test-payment.momo.vn/v2/gateway/api/query"
+        partnerCode = "MOMO"
+        orderId = request.data.get('orderId')
+        requestId = str(uuid.uuid4())
+        lang = "vi"
+        accessKey = "F8BBA842ECF85"
+        secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+        rawSignature = "accessKey=" + accessKey + "&orderId=" + orderId \
+                       + "&partnerCode=" + partnerCode + "&requestId=" + requestId
+        h = hmac.new(bytes(secretKey, 'ascii'), bytes(rawSignature, 'ascii'), hashlib.sha256)
+        signature = h.hexdigest()
+
+        data = {
+            'partnerCode': partnerCode,
+            'orderId': orderId,
+            'lang': lang,
+            'signature': signature,
+            'requestId': requestId
+        }
+        data = json.dumps(data)
+        clen = len(data)
+        response = requests.post(endpoint, data=data,
+                                 headers={'Content-Type': 'application/json', 'Content-Length': str(clen)})
+        return Response(response.json())
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView):
     queryset = Comment.objects.all()
@@ -174,3 +273,85 @@ class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView):
         Comment.objects.filter(id=request.data.get('id')).update(content=request.data.get('content'))
 
         return Response(status=status.HTTP_200_OK)
+
+
+class BillViewSet(viewsets.ViewSet):
+
+    @action(methods=['get'], url_path='stats-by-user', detail=False)
+    def stats_by_user(self, request):
+        bills = Bill.objects.values('booking__user__username').annotate(total=Sum('total'), count=Count('id')).order_by('-total')
+
+        return Response(bills)
+
+
+    @action(methods=['post'], url_path='stats-by-month', detail=False)
+    def stats_by_month(self, request):
+        a = str(request.data.get('month')).split('-')
+        month = int(a[1])
+        year = int(a[0])
+        day = 0
+        data = {}
+
+        if month == 2:
+            if (year % 400 == 0) and (year % 100 == 0):
+                day = 29
+            elif (year % 4 == 0) and (year % 100 != 0):
+                day = 29
+            else:
+                day = 28
+        elif month == 4 or month == 6 or month == 9 or month == 11:
+            day = 30
+        else:
+            day = 31
+        data[0] = {'length': day, 'month': month, 'year': year}
+
+        for i in range(day):
+            start = datetime(year, month, i + 1)
+            end = datetime(year, month, i + 1, 23, 59, 59)
+            bill = Bill.objects.filter(created_date__gte=start, created_date__lt=end).aggregate(Sum('total'))
+            if bill['total__sum'] is None:
+                data[i + 1] = {'day': i + 1, 'total': 0}
+            else:
+                data[i + 1] = {'day': i + 1, 'total': bill['total__sum']}
+
+        return JsonResponse(data)
+
+    @action(methods=['post'], url_path='stats-by-year', detail=False)
+    def stats_by_year(self, request):
+        year = int(request.data.get('year'))
+        data = {}
+        for i in range(12):
+            start = datetime(year, i + 1, 1)
+            end = None
+            if i != 11:
+                end = datetime(year, i + 2, 1)
+            else:
+                end = datetime(year + 1, 1, 1)
+            bill = Bill.objects.filter(created_date__gte=start, created_date__lt=end).aggregate(Sum('total'))
+            if bill['total__sum'] is None:
+                data[i] = {'month': i + 1, 'total': 0}
+            else:
+                data[i] = {'month': i + 1, 'total': bill['total__sum']}
+        return JsonResponse(data)
+
+
+    @action(methods=['get'], url_path='stats-by-tour', detail=False)
+    def stats_by_tour(self, request):
+        tours = Tour.objects.all()
+        data = {}
+        i = 1
+        for t in tours:
+            prices = Price.objects.filter(tour=t)
+            bookings = Booking.objects.filter(price__in=prices)
+            if not bookings:
+                data[i] = {'name': t.name, 'total': 0, 'count': 0, 'quantity': t.quantity_ticket}
+            else:
+                bill = Bill.objects.filter(booking__in=bookings).values('booking__price__tour_id').annotate(total=Sum('total'), count=Sum('booking__quantity'))
+                print(bill)
+                if not bill:
+                    data[i] = {'name': t.name, 'total': 0, 'count': 0, 'quantity': t.quantity_ticket}
+                else:
+                    data[i] = {'name': t.name, 'total': bill[0].get('total'), 'count': bill[0].get('count'), 'quantity': t.quantity_ticket}
+            i = i + 1
+        data[0] = {'length': i - 1}
+        return JsonResponse(data)

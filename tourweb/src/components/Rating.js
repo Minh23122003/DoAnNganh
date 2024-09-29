@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import cookie from "react-cookies"
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import APIs, { endpoints } from "../configs/APIs";
 
 const Rating = () => {

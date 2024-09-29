@@ -62,6 +62,8 @@ const TourDetails = () => {
     const addComment = async () => {
         if (user === null)
             alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để bình luận!")
+        else if(content == '')
+            alert("Bạn chưa nhập nội dung")
         else{
             try{
                 let token = cookie.load("access-token")
@@ -72,6 +74,7 @@ const TourDetails = () => {
                     setQuantity(0)
                     setPage(1)
                     setHide("inline")
+                    setContent('')
                 }
 
             }catch(ex) {

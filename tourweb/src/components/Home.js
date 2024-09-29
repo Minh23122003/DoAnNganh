@@ -19,6 +19,7 @@ const Home = () => {
     const [disabled, setDisabled] = useState(false)
 
     const loadTours = async () => {
+        console.info(page)
         if (page > 0){
             try{
                 let url = `${endpoints["tours"]}?page=${page}`
@@ -90,13 +91,14 @@ const Home = () => {
 
     const submit = (e) => {
         e.preventDefault();
-
+        setPage(1)
+        setDisabled(false)
         nav(`/?location=${location}&price_min=${minPrice}&price_max=${maxPrice}&cate_id=${cateId}&start_date=${startDate}`);
     }
 
     return (
         <>
-        <Form inline onSubmit={submit}>
+        <Form inline onSubmit={submit} className="mt-3">
             <Row>
                 <Col xs="auto">
                     <Form.Control
@@ -115,6 +117,9 @@ const Home = () => {
                         value={maxPrice}
                         onChange={e => setMaxPrice(e.target.value)}
                     />
+                </Col>
+                <Col xs="auto">
+                    Chọn ngày khởi hành
                 </Col>
                 <Col xs="auto" >
                     <Form.Control

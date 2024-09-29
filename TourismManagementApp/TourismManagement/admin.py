@@ -6,6 +6,7 @@ from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.urls import path
 from django.template.response import TemplateResponse
+from django.db.models import Sum, Count
 
 
 class MyTourAdminSite(admin.AdminSite):
@@ -15,7 +16,7 @@ class MyTourAdminSite(admin.AdminSite):
         return [path('stats/', self.stats_view)] + super().get_urls()
 
     def stats_view(self, request):
-        bills = Bill.objects.all()
+        bills = Bill.objects.values('booking__user__username').annotate(total=Sum('total'), count=Count('id')).order_by('-total')
         return TemplateResponse(request, 'admin/stats.html', {
             'bills': bills
         })

@@ -1,7 +1,7 @@
 import axios from "axios"
 import cookie from "react-cookies"
 
-const BASE_URL = 'http://192.168.1.3:8000/'
+const BASE_URL = 'http://192.168.1.4:8000/'
 
 export const endpoints = {
     'tours': '/tours/',
@@ -17,7 +17,9 @@ export const endpoints = {
     'deleteBooking': (id) => `/booking/${id}/`,
     'pay': '/booking/pay/',
     'payAll': '/booking/pay-all/',
-    'addRating': (id) => `/booking/${id}/add-rating/`
+    'addRating': (id) => `/booking/${id}/add-rating/`,
+    'getLinkMomo': '/booking/get-link-momo/',
+    'check-status': '/booking/check-status/'
 }
 
 export const authAPIs = () => {

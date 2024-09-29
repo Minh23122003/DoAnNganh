@@ -2,6 +2,7 @@ import { useContext, useEffect } from 'react';
 import { Badge, Button, Container, Image, Nav, Navbar} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { MyDispatchContext, MyUserContext } from '../App';
+import cookie from 'react-cookies'
 
 const Header = () => {
     const user = useContext(MyUserContext)
@@ -15,7 +16,6 @@ const Header = () => {
         <>
         <Navbar expand="lg" className="bg-body-tertiary">
             <Container>
-                <Navbar.Brand href="#home">E-commerce Website</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="me-auto">
