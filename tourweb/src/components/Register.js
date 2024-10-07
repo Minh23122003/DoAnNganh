@@ -12,8 +12,20 @@ const Register = () => {
     const register = async (e) => {
         e.preventDefault();
 
-        if (user.password === undefined || user.password !== user.confirm)
-            setErr("Mật khẩu KHÔNG khớp!");
+        if (user.first_name === undefined || user.first_name === "")
+            alert("Vui lòng nhập tên!")
+        else if (user.last_name === undefined || user.last_name === "")
+            alert("Vui lòng nhập họ!")
+        else if (user.phone === undefined || user.phone === "")
+            alert("Vui lòng nhập số điện thoại!")
+        else if (user.username === undefined || user.username === "")
+            alert("Vui lòng nhập tên đăng nhập!")
+        else if (user.password === "" || user.password === undefined)
+            alert("Vui lòng nhập mật khẩu")
+        else if (user.password !== user.confirm)
+            alert("Mật khẩu và xác nhận mật khẩu không trùng khớp. Vui lòng kiểm tra lại!");
+        else if (avatar.current.files.length === 0)
+            alert("Vui lòng chọn avatar!")
         else {
             let form = new FormData();
             for (let f in user)
@@ -23,14 +35,19 @@ const Register = () => {
 
             form.append('avatar', avatar.current.files[0]);
 
-            let res = await APIs.post(endpoints['register'], form, {
-                headers: {
-                    'Content-Type': "multipart/form-data"
-                }
-            });
-            console.info(res.data);
-            if (res.status === 201)
-                nav("/login");
+            try {
+                let res = await APIs.post(endpoints['register'], form, {
+                    headers: {
+                        'Content-Type': "multipart/form-data"
+                    }
+                });
+
+                console.info(res.data);
+                if (res.status === 201)
+                    nav("/login");
+            } catch(ex){
+                alert("Tên đăng nhập đã tồn tại. Vui lòng chọn tên đăng nhập khác!")
+            }
         }
     }
 
@@ -41,7 +58,7 @@ const Register = () => {
     return (
         <>
             <h1 className="text-center text-info mt-1">ĐĂNG KÝ</h1>
-            {err && <Alert variant="danger">{err}</Alert>}
+            {/* {err && <Alert variant="danger">{err}</Alert>} */}
             <Form method="post" onSubmit={register}>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput11">
                     <Form.Label>Tên</Form.Label>

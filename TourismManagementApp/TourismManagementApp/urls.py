@@ -41,7 +41,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', include('TourismManagement.urls')),
-    path('admin/', admin_site.urls),
+    path('stats/', admin_site.urls),
+    path('admin/', admin.site.urls),
     re_path(r'^ckeditor/', include('ckeditor_uploader.urls')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
             schema_view.without_ui(cache_timeout=0),

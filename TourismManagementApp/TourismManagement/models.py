@@ -6,7 +6,10 @@ from cloudinary.models import CloudinaryField
 
 class User(AbstractUser):
     avatar = CloudinaryField(null=False)
-    phone = models.CharField(max_length=10, null=False, unique=True, default='0')
+    phone = models.CharField(max_length=10, null=False)
+
+    class Meta:
+        db_table = 'user'
 
 
 class BaseModel(models.Model):
@@ -23,12 +26,18 @@ class TourCategory(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = 'tour_category'
+
 
 class Location(BaseModel):
     name = models.CharField(max_length=100, unique=True, null=False)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'location'
 
 
 class Destination(BaseModel):
@@ -37,6 +46,9 @@ class Destination(BaseModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'destination'
 
 
 class Tour(BaseModel):
@@ -52,14 +64,20 @@ class Tour(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = 'tour'
+
 
 class TourImage(BaseModel):
     name = models.CharField(max_length=150, null=False)
     image = CloudinaryField(null=False)
-    tour_id = models.ForeignKey(Tour, on_delete=models.CASCADE)
+    tour = models.ForeignKey(Tour, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'tour_image'
 
 
 class TypeOfTicket(BaseModel):
@@ -67,6 +85,9 @@ class TypeOfTicket(BaseModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'type_of_ticket'
 
 
 class Price(BaseModel):
@@ -77,15 +98,21 @@ class Price(BaseModel):
     # def __str__(self):
     #     return self.id
 
+    class Meta:
+        db_table = 'price'
+
 
 class Booking(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     price = models.ForeignKey(Price, on_delete=models.CASCADE)
     quantity = models.IntegerField(null=False)
-    pay = models.BooleanField(default=False)
+    is_pay = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.user_id} - {self.price_id}'
+
+    class Meta:
+        db_table = 'booking'
 
 
 class Bill(BaseModel):
@@ -97,6 +124,9 @@ class Bill(BaseModel):
     def __str__(self):
         return f'{self.booking_id}'
 
+    class Meta:
+        db_table = 'bill'
+
 
 class Rating(BaseModel):
     stars = models.FloatField(null=False)
@@ -105,6 +135,9 @@ class Rating(BaseModel):
 
     def __str__(self):
         return self.id
+
+    class Meta:
+        db_table = 'rating'
 
 
 class Comment(BaseModel):
@@ -115,6 +148,9 @@ class Comment(BaseModel):
     def __str__(self):
         return f'{self.user_id} - {self.tour_id}'
 
+    class Meta:
+        db_table = 'comment'
+
 
 class Like(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -123,6 +159,7 @@ class Like(BaseModel):
 
     class Meta:
         unique_together = ('user', 'tour')
+        db_table = 'like'
 
     def __str__(self):
         return f'{self.user_id} - {self.tour_id}'

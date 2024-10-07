@@ -156,4 +156,4 @@ class BookingSerializer(serializers.ModelSerializer):
         return tour.start_date
     class Meta:
         model = Booking
-        fields = ['id', 'quantity', 'pay'] + ['price'] + ['created_date'] + ['tour_name'] + ['tour_start_date']
+        fields = ['id', 'quantity', 'is_pay'] + ['price'] + ['created_date'] + ['tour_name'] + ['tour_start_date']

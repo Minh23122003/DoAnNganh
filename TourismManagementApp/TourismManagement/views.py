@@ -20,7 +20,7 @@ class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIVi
     pagination_class = paginators.TourPaginator
 
     def get_permissions(self):
-        if self.action in ['post_comment', 'get_rating', 'post_rating', 'post_booking']:
+        if self.action in ['post_comment', 'post_rating', 'post_booking', 'post-like', 'delete-like']:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
@@ -86,20 +86,25 @@ class TourViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIVi
         return Response(serializers.RatingSerializer(rating).data)
 
 
-    @action(methods=['get'], url_path='get-rating', detail=True)
-    def get_rating(self, request, pk):
-        try:
-            rating = Rating.objects.get(tour=self.get_object(), user=request.user)
-            return Response(serializers.RatingSerializer(rating).data)
-        except:
-            return JsonResponse({'stars': 0})
+    @action(methods=['post'], url_path='post-like', detail=True)
+    def post_like(self, request, pk):
+        like, created = Like.objects.get_or_create(tour=self.get_object(), user=request.user)
+
+        return Response(status=status.HTTP_201_CREATED)
+
+
+    @action(methods=['delete'], url_path='delete-like', detail=True)
+    def delete_like(self, request, pk):
+        Like.objects.filter(tour=self.get_object(), user=request.user).delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
     @action(methods=['post'], url_path='post-booking', detail=True)
     def post_booking(self, request, pk):
 
-        booking, created = Booking.objects.get_or_create(user=request.user, price_id=request.data.get('price_id'), pay=False, defaults={'quantity': request.data.get('quantity')})
+        booking, created = Booking.objects.get_or_create(user=request.user, price_id=request.data.get('price_id'), is_pay=False, defaults={'quantity': request.data.get('quantity')})
 
         if not created:
             return JsonResponse({'content': 'Bạn đã đặt vé cho tour này rồi. Vui lòng hủy vé để đặt lại!', 'status': 406})
@@ -147,9 +152,9 @@ class BookingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
 
     @action(methods=['post'], url_path='pay-all', detail=False)
     def pay_all(self, request):
-        booking = Booking.objects.filter(user_id=request.data.get('user_id'), pay=False)
+        booking = Booking.objects.filter(user_id=request.data.get('user_id'), is_pay=False)
         for b in booking:
-            b.pay = True
+            b.is_pay = True
             b.save()
             price = Price.objects.get(id=b.price_id)
             bill = Bill.objects.create(booking_id=b.id, total=b.quantity * price.price, method_pay=request.data.get("method_pay"))
@@ -159,7 +164,7 @@ class BookingViewSet(viewsets.ViewSet, generics.DestroyAPIView):
     @action(methods=['post'], url_path='pay', detail=False)
     def pay(self, request):
         booking = Booking.objects.get(id=request.data.get("id"))
-        booking.pay = True
+        booking.is_pay = True
         booking.save()
         bill = Bill.objects.get_or_create(booking_id=booking.id, defaults={'total':request.data.get('total'), 'method_pay':request.data.get("method_pay")})
 

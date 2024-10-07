@@ -7,13 +7,24 @@ import 'moment/locale/vi'
 import { Link } from "react-router-dom";
 
 const TourDetails = () => {
-    const [tour] = useState(cookie.load("tour"));
+    const [tour, setTour] = useState(null);
     const [user] = useState(cookie.load("user"));
     const [comment, setComment]= useState([]);
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState('');
     const [hide, setHide] = useState("inline")
     const [content, setContent] = useState("")
+    const [variant, setVariant] = useState('light')
+
+    const loadTour = async() => {
+        let res = await APIs.get(endpoints['tour'](cookie.load('tourId')))
+        setTour(res.data)
+        setQuantity(0)
+    }
+
+    useEffect(() => {
+        loadTour()
+    }, [])
 
     const loadComments= async () => {
         if (page > 0){
@@ -60,9 +71,9 @@ const TourDetails = () => {
     }
 
     const addComment = async () => {
-        if (user === null)
+        if (user === undefined)
             alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để bình luận!")
-        else if(content == '')
+        else if(content === '')
             alert("Bạn chưa nhập nội dung")
         else{
             try{
@@ -83,9 +94,25 @@ const TourDetails = () => {
         }
     }
 
+    const like = async () => {
+        if (user === undefined)
+            alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để like!")
+        else{
+            if (variant === 'primary'){
+                let token = cookie.load("access-token")
+                let res = await authAPIs(token).delete(endpoints['deleteLike'](cookie.load('tourId')))
+                setVariant('light')
+            }else{
+                let token = cookie.load("access-token")
+                let res = await authAPIs(token).post(endpoints['addLike'](cookie.load('tourId')))
+                setVariant('primary')
+            }
+        }
+    }
+
     return (
         <>
-        <Row>
+        {tour===null?<></>:<Row>
             <Col md="5" xs="12">
                 <h1>{tour.name}</h1>
                 <Row>
@@ -93,7 +120,7 @@ const TourDetails = () => {
                         <div>Ngày bắt đầu: {new Date(tour.start_date).getDate()}/{new Date(tour.start_date).getMonth() + 1}/{new Date(tour.start_date).getFullYear()}</div>
                         <div>Ngày kết thúc: {new Date(tour.end_date).getDate()}/{new Date(tour.end_date).getMonth() + 1}/{new Date(tour.end_date).getFullYear()}</div>
                     </Col>
-                    <Col md="7"><Button><Link className="nav-link" to="/booking" >Đặt tour</Link></Button></Col>
+                    <Col md="7"><Button variant="danger"><Link className="nav-link" to="/booking" >Đặt tour</Link></Button></Col>
                 </Row>
                 <div>Số vé còn lại: {tour.remain_ticket}</div>
                 <div>Giá vé:</div>
@@ -124,19 +151,20 @@ const TourDetails = () => {
                     </Col>
                     <Col md="2"><Button onClick={addComment}>Đăng</Button></Col>
                 </Row>
+                <Button variant={variant} className="mb-3" onClick={like}>Like</Button>
                 <div className="mb-3 bg-light p-3">Bình luận ({quantity} bình luận):</div>
                 {comment.map(c => <div key={c.id}>
                     <Row className="m-3 p-3" style={{backgroundColor:"lightblue"}}>
                         <Col md="2"><Image width={50} src={c.user.avatar} /></Col>
                         <Col md="4">{c.user.first_name} {c.user.last_name}</Col>
                         <Col md="3">{moment(c.updated_date).fromNow()}</Col>
-                        <Col md="3">{user.id === c.user.id?<Button onClick={() => deleteComment(c.id)} >Xóa bình luận</Button>:<></>}</Col>
-                        <div>{c.content}</div>
+                        <Col md="3">{user !== undefined && user.id === c.user.id?<Button onClick={() => deleteComment(c.id)} >Xóa bình luận</Button>:<></>}</Col>
+                        <div>Nội dung: {c.content}</div>
                     </Row>
                 </div>)}
                 <Link className="nav-link text-primary text-decoration-underline m-3" style={{display:hide}} onClick={loadMore}>Xem thêm bình luận</Link>
             </Col>
-        </Row>
+        </Row>}
         </>
     );
 }

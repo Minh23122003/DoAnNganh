@@ -20,6 +20,8 @@ const Header = () => {
                 <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="me-auto">
                     <Link className='nav-link' to="/">Trang chủ</Link>
+                    <Link className='nav-link' to="/rule">Quy định</Link>
+                    <Link className='nav-link' to="/aboutUs">Về chúng tôi</Link>
 
                     {user===null?<>
                         <Link className='nav-link text-success' to="/login">&#129489; Đăng nhập</Link>

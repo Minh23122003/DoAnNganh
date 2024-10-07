@@ -20,33 +20,39 @@ const Home = () => {
 
     const loadTours = async () => {
         console.info(page)
+        console.info(q)
         if (page > 0){
             try{
                 let url = `${endpoints["tours"]}?page=${page}`
 
                 let a = q.get("location");
                 if (a !== "" && a !== null) {
-                    setPage(1);
+                    if (a !== location)
+                        setPage(1);
                     url = `${url}&location=${a}`;
                 }
                 let min = q.get("price_min");
                 if (min !== "" && min !== null) {
-                    setPage(1);
+                    if (min !== minPrice)
+                        setPage(1);
                     url = `${url}&price_min=${min}`;
                 }
                 let max = q.get("price_max");
                 if (max !== "" && max !== null) {
-                    setPage(1);
+                    if (max !== maxPrice)
+                        setPage(1);
                     url = `${url}&price_max=${max}`;
                 }
                 let start = q.get("start_date");
                 if (start !== "" && start !== null) {
-                    setPage(1);
+                    if (start !== startDate)
+                        setPage(1);
                     url = `${url}&start_date=${start}`;
                 }
                 let cate = q.get("cate_id");
                 if (cate !== "" && cate !== null) {
-                    setPage(1);
+                    if (cate !== cateId)
+                        setPage(1);
                     url = `${url}&cate_id=${cate}`;
                 }
 
@@ -59,7 +65,7 @@ const Home = () => {
 
                 if (res.data.next === null){
                     setDisabled(true)
-                    setPage(-99)
+                    // setPage(-99)
                 }
             }catch (ex){
                 console.error(ex)
@@ -82,8 +88,8 @@ const Home = () => {
 
     useEffect(() => {
         loadTours();
-    }, [page, q, disabled])
-
+    }, [page, q])
+    
     const loadMore = (e) => {
         e.preventDefault();
         setPage(page + 1);
@@ -101,43 +107,19 @@ const Home = () => {
         <Form inline onSubmit={submit} className="mt-3">
             <Row>
                 <Col xs="auto">
-                    <Form.Control
-                        type="number"
-                        placeholder="Tìm giá nhỏ nhất..."
-                        className=" mr-sm-2"
-                        value={minPrice}
-                        onChange={e => setMinPrice(e.target.value)}
-                    />
+                    <Form.Control type="number" placeholder="Tìm giá nhỏ nhất..." className=" mr-sm-2" value={minPrice} onChange={e => setMinPrice(e.target.value)}/>
                 </Col>
                 <Col xs="auto" >
-                    <Form.Control
-                        type="number"
-                        placeholder="Tìm giá lớn nhất..."
-                        className=" mr-sm-2"
-                        value={maxPrice}
-                        onChange={e => setMaxPrice(e.target.value)}
-                    />
+                    <Form.Control type="number" placeholder="Tìm giá lớn nhất..." className=" mr-sm-2" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}/>
                 </Col>
                 <Col xs="auto">
                     Chọn ngày khởi hành
                 </Col>
                 <Col xs="auto" >
-                    <Form.Control
-                        type="date"
-                        placeholder="Tìm ngày khởi hành..."
-                        className=" mr-sm-2"
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                    />
+                    <Form.Control type="date" placeholder="Tìm ngày khởi hành..." className=" mr-sm-2" value={startDate} onChange={e => setStartDate(e.target.value)}/>
                 </Col>
                 <Col xs="auto" >
-                    <Form.Control
-                        type="text"
-                        placeholder="Tìm điểm đến..."
-                        className=" mr-sm-2"
-                        value={location}
-                        onChange={e => setLocation(e.target.value)}
-                    />
+                    <Form.Control type="text" placeholder="Tìm điểm đến..." className=" mr-sm-2" value={location} onChange={e => setLocation(e.target.value)}/>
                 </Col>
                 <Col xs="auto">
                     <Form.Select onChange={e => setCateId(e.target.value)}>
@@ -154,13 +136,13 @@ const Home = () => {
         <h1 className="text-center text-info mt-2">Danh sách các tour du lịch</h1>
 
         <Row className="text-center">
-        {tours.length === 0 ? <h3 className="m-3">Không có tour phù hợp</h3>: tours.map(t => <Col key={t.id} xs="11" md="5" className="m-2">
+        {tours.length === 0 ? <h3 className="m-3">Không có tour phù hợp</h3>: tours.map(t => <Col key={t.id} xs="11" md="5" className="m-2" id={t.id}>
         <Card>
             <Card.Img variant="top" src={t.images[0].image} height={300}/>
             <Card.Body>
                 <Card.Title>{t.name}</Card.Title>
-                <Button variant="primary" className="m-3"><Link onClick={()=>cookie.save('tour', t)} className="nav-link" to="/tourDetails">Xem chi tiết</Link></Button>
-                <Button variant="primary" className="m-3"><Link onClick={() => cookie.save("tour", t)} className="nav-link" to="/booking">Đặt tour</Link></Button>
+                <Button variant="primary" className="m-3" onClick={()=> cookie.save("tourId", t.id)}><Link className="nav-link" to="/tourDetails">Xem chi tiết</Link></Button>
+                <Button variant="danger" className="m-3" onClick={() => cookie.save("tourId", t.id)}><Link className="nav-link" to="/booking">Đặt tour</Link></Button>
             </Card.Body>
         </Card>
         </Col>)}

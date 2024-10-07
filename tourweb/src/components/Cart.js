@@ -132,7 +132,7 @@ const Cart = () => {
         else{
             let total = 0
             for (let b of booking)
-                if(b.pay === false)
+                if(b.is_pay === false)
                     total = total + b.quantity * b.price.price
             if ( total === 0)
                 window.alert("Bạn không có tour cần thanh toán!")
@@ -180,9 +180,9 @@ const Cart = () => {
                     <th>{b.quantity}</th>
                     <th>{new Date(b.created_date).toLocaleDateString()}</th>
                     <th>{b.quantity * b.price.price}</th>
-                    <th>{b.pay===true?"Đã thanh toán":"Chưa thanh toán"}</th>
-                    <th>{b.pay===false?<Button onClick={() => deleteBooking(b.id)} variant="danger">Hủy đặt vé</Button>:<></>}</th>
-                    <th>{b.pay===false?<Button onClick={() => getLinkMomo(b.id, b.quantity * b.price.price, false)}>Thanh toán</Button>:<></>}</th>
+                    <th>{b.is_pay===true?"Đã thanh toán":"Chưa thanh toán"}</th>
+                    <th>{b.is_pay===false?<Button onClick={() => deleteBooking(b.id)} variant="danger">Hủy đặt vé</Button>:<></>}</th>
+                    <th>{b.is_pay===false?<Button onClick={() => getLinkMomo(b.id, b.quantity * b.price.price, false)}>Thanh toán</Button>:<></>}</th>
                     <th>{new Date(b.tour_start_date)<new Date()?<Button onClick={() => cookie.save("booking", b)} ><Link className="nav-link" to='/rating' >Đánh giá</Link></Button>:<></>}</th>
                 </tr>)}
             </tbody>

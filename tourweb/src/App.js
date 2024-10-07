@@ -14,6 +14,8 @@ import TourDetails from './components/TourDetails';
 import Booking from './components/Booking';
 import Cart from './components/Cart';
 import Rating from './components/Rating';
+import AboutUs from './components/AboutUs';
+import Rule from './components/Rule'
 
 export const MyUserContext = createContext();
 export const MyDispatchContext = createContext();
@@ -38,6 +40,8 @@ const App = () => {
                 <Route path='/booking' element={<Booking />} />
                 <Route path='/cart' element={<Cart />} />
                 <Route path='/rating' element={<Rating />} />
+                <Route path='/aboutUs' element={<AboutUs />} />
+                <Route path='/rule' element={<Rule />} />
               </Routes>
             </Container>
             <Footer />
